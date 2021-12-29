@@ -2,9 +2,9 @@ package csv
 
 import (
 	"encoding/csv"
-	"hytek"
 	"io"
 
+	"github.com/countcraicula/hytek"
 	"github.com/jszwec/csvutil"
 )
 

@@ -1,8 +1,9 @@
 package reports
 
 import (
-	"hytek"
 	"sort"
+
+	"github.com/countcraicula/hytek"
 )
 
 type eventKey struct {

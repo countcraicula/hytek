@@ -3,14 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"hytek"
-	"hytek/csv"
-	"hytek/reports"
 	"io/ioutil"
 	"os"
 	"sort"
 	"time"
 
+	"github.com/countcraicula/hytek"
+	"github.com/countcraicula/hytek/csv"
+	"github.com/countcraicula/hytek/reports"
 	"github.com/jszwec/csvutil"
 )
 

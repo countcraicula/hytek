@@ -4,12 +4,12 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
-	"hytek"
 	"os"
 
+	"github.com/countcraicula/hytek"
 	"github.com/jszwec/csvutil"
 
-	result "hytek/csv"
+	result "github.com/countcraicula/hytek/csv"
 )
 
 var (

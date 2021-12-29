@@ -3,9 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"hytek"
 	"os"
 	"time"
+
+	"github.com/countcraicula/hytek"
 )
 
 var (

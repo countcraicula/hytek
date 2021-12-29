@@ -3,10 +3,10 @@ package reports
 import (
 	"bytes"
 	"fmt"
-	"hytek"
 	"sort"
 	"time"
 
+	"github.com/countcraicula/hytek"
 	"github.com/johnfercher/maroto/pkg/consts"
 	"github.com/johnfercher/maroto/pkg/pdf"
 	"github.com/johnfercher/maroto/pkg/props"
