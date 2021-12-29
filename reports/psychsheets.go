@@ -1,6 +1,7 @@
-package main
+package reports
 
 import (
+	"bytes"
 	"fmt"
 	"hytek"
 
@@ -9,11 +10,29 @@ import (
 	"github.com/johnfercher/maroto/pkg/props"
 )
 
-func PsychSheet(p pdf.Maroto, filename string, m *hytek.Meet, events []*hytek.Event) {
+func PsychSheet(m *hytek.Meet, events []*hytek.Event, opts ...SheetOption) ([]bytes.Buffer, error) {
+	var ret []bytes.Buffer
+	s := applyOptions(opts)
+	eventList := [][]*hytek.Event{events}
+	if s.BySession() {
+		eventList = s.EventOrder().SplitBySession(events)
+	}
+	for i, events := range eventList {
+		buf, err := psychSheet(m, events, s, i+1)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, buf)
+	}
+	return ret, nil
+}
+
+func psychSheet(m *hytek.Meet, events []*hytek.Event, s *SheetOptions, session int) (bytes.Buffer, error) {
+	p := pdf.NewMaroto(s.Orientation(), s.Size())
 	p.SetAliasNbPages("{nb}")
 	p.SetFirstPageNb(1)
 	p.SetDefaultFontFamily(consts.Courier)
-	p.RegisterHeader(psychHeader(p, m))
+	p.RegisterHeader(psychHeader(p, m, s, session))
 	p.RegisterFooter(psychFooter(p))
 	for _, event := range events {
 		if len(event.Entries) == 0 {
@@ -24,10 +43,10 @@ func PsychSheet(p pdf.Maroto, filename string, m *hytek.Meet, events []*hytek.Ev
 			psychEntry(p, entry, i+1)
 		}
 	}
-	p.OutputFileAndClose(filename)
+	return p.Output()
 }
 
-func psychHeader(p pdf.Maroto, m *hytek.Meet) func() {
+func psychHeader(p pdf.Maroto, m *hytek.Meet, s *SheetOptions, session int) func() {
 	return func() {
 		p.Row(10, func() {
 			p.Col(3, func() {
@@ -41,7 +60,7 @@ func psychHeader(p pdf.Maroto, m *hytek.Meet) func() {
 				p.Text(fmt.Sprintf("Session %v", session), props.Text{Align: consts.Center, Style: consts.Bold})
 			})
 			p.Col(3, func() {
-				p.Text(m.StartDate.Format("02/01/2006"), props.Text{Align: consts.Right})
+				p.Text(s.SessionTime(session).Format("02/01/2006"), props.Text{Align: consts.Right})
 			})
 		})
 		p.Line(1.0)

@@ -1,6 +1,7 @@
-package main
+package reports
 
 import (
+	"bytes"
 	"fmt"
 	"hytek"
 	"sort"
@@ -33,7 +34,25 @@ func eventToHeatDuration(e *hytek.Event) time.Duration {
 
 var startTimeFormat = "3:04pm"
 
-func HeatSheet(p pdf.Maroto, filename string, m *hytek.Meet, events []*hytek.Event) {
+func HeatSheet(m *hytek.Meet, events []*hytek.Event, opts ...SheetOption) ([]bytes.Buffer, error) {
+	var ret []bytes.Buffer
+	s := applyOptions(opts)
+	eventList := [][]*hytek.Event{events}
+	if s.BySession() {
+		eventList = s.EventOrder().SplitBySession(events)
+	}
+	for i, events := range eventList {
+		buf, err := heatSheet(m, events, s, i+1)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, buf)
+	}
+	return ret, nil
+}
+
+func heatSheet(m *hytek.Meet, events []*hytek.Event, s *SheetOptions, session int) (bytes.Buffer, error) {
+	p := pdf.NewMaroto(s.Orientation(), s.Size())
 	p.SetAliasNbPages("{nb}")
 	p.SetFirstPageNb(1)
 	p.SetDefaultFontFamily(consts.Courier)
@@ -50,7 +69,7 @@ func HeatSheet(p pdf.Maroto, filename string, m *hytek.Meet, events []*hytek.Eve
 				p.Text(fmt.Sprintf("Session %v", session), props.Text{Align: consts.Center, Style: consts.Bold})
 			})
 			p.Col(3, func() {
-				p.Text(dateList[dateIndex].Format("02/01/2006"), props.Text{Align: consts.Right, Style: consts.Bold})
+				p.Text(s.SessionTime(session).Format("02/01/2006"), props.Text{Align: consts.Right, Style: consts.Bold})
 			})
 		})
 		p.Line(1.0)
@@ -69,40 +88,33 @@ func HeatSheet(p pdf.Maroto, filename string, m *hytek.Meet, events []*hytek.Eve
 			})
 		})
 	})
-	generateHeatList(p, m, events)
-	p.OutputFileAndClose(filename)
+	generateHeatList(p, m, events, s, session)
+	return p.Output()
 }
 
-var dateIndex = 0
-var session = 1
-
-func generateHeatList(p pdf.Maroto, m *hytek.Meet, events []*hytek.Event) {
-	startTime := dateList[dateIndex]
-	sort.Sort(sortEventsByStrokeAndDistance(events))
+func generateHeatList(p pdf.Maroto, m *hytek.Meet, events []*hytek.Event, s *SheetOptions, session int) {
+	startTime := s.SessionTime(session)
+	o := s.EventOrder()
+	o.Sort(events)
 	heatSessionHeader(p, session)
 	for _, event := range events {
 		if len(event.Entries) == 0 {
 			continue
 		}
-		key := eventKey{
-			stroke:   event.Stroke,
-			distance: event.Distance,
-		}
-		eventV := eventOrder[key]
 		sort.Sort(sortByHeatAndLane(event.Entries))
-		maybeAddPageBeforeEvent(p)
+		maybeAddPageBeforeEvent(p, 3)
 		heatEventHeader(p, event, startTime)
 		heat := 0
 		for _, entry := range event.Entries {
 			if entry.Entry.Result.Heat != heat {
 				heat = entry.Entry.Result.Heat
-				maybeAddPageBeforeHeat(p)
+				maybeAddPageBeforeHeat(p, s.Lanes())
 				heatHeader(p, heat, startTime)
 				startTime = startTime.Add(eventToHeatDuration(event))
 			}
 			heatEntry(p, entry.Entry.Result.Lane, entry)
 		}
-		if eventV.breakAfter {
+		if o.BreakAfter(event) {
 			breakHeader(p)
 			startTime = startTime.Add(10 * time.Minute)
 		}
@@ -188,17 +200,17 @@ func heatDistanceFromBottom(p pdf.Maroto) float64 {
 	return h - b - 11 - o
 }
 
-func maybeAddPageBeforeHeat(p pdf.Maroto) {
+func maybeAddPageBeforeHeat(p pdf.Maroto, numLanes int) {
 	d := int(heatDistanceFromBottom(p)) + 1
-	h := heatEntryHeight*(*numLanes) + heatHeaderHeight + 10
+	h := heatEntryHeight*(numLanes) + heatHeaderHeight + 10
 	if d < h {
 		p.AddPage()
 	}
 }
 
-func maybeAddPageBeforeEvent(p pdf.Maroto) {
+func maybeAddPageBeforeEvent(p pdf.Maroto, numLanes int) {
 	d := int(heatDistanceFromBottom(p)) + 1
-	h := heatEntryHeight*(*numLanes) + heatHeaderHeight + heatEventHeaderHeight + 10
+	h := heatEntryHeight*(numLanes) + heatHeaderHeight + heatEventHeaderHeight + 10
 	if d < h {
 		p.AddPage()
 	}

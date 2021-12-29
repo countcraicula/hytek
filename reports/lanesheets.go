@@ -1,6 +1,7 @@
-package main
+package reports
 
 import (
+	"bytes"
 	"fmt"
 	"hytek"
 
@@ -9,10 +10,10 @@ import (
 	"github.com/johnfercher/maroto/pkg/props"
 )
 
-func collectByLaneNumber(events []*hytek.Event) [][]*hytek.Event {
-	ret := make([][]*hytek.Event, *numLanes)
+func collectByLaneNumber(events []*hytek.Event, numLanes int) [][]*hytek.Event {
+	ret := make([][]*hytek.Event, numLanes)
 	for _, event := range events {
-		tmp := make([][]*hytek.Entry, *numLanes)
+		tmp := make([][]*hytek.Entry, numLanes)
 		if len(event.Entries) == 0 {
 			continue
 		}
@@ -27,9 +28,26 @@ func collectByLaneNumber(events []*hytek.Event) [][]*hytek.Event {
 	}
 	return ret
 }
+func LaneSheets(m *hytek.Meet, events []*hytek.Event, opts ...SheetOption) ([]bytes.Buffer, error) {
+	var ret []bytes.Buffer
+	s := applyOptions(opts)
+	eventList := [][]*hytek.Event{events}
+	if s.BySession() {
+		eventList = s.EventOrder().SplitBySession(events)
+	}
+	for i, events := range eventList {
+		buf, err := laneSheets(m, events, s, i+1)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, buf)
+	}
+	return ret, nil
+}
 
-func LaneSheets(p pdf.Maroto, filename string, m *hytek.Meet, events []*hytek.Event) {
-	eventsByLane := collectByLaneNumber(events)
+func laneSheets(m *hytek.Meet, events []*hytek.Event, s *SheetOptions, session int) (bytes.Buffer, error) {
+	p := pdf.NewMaroto(s.Orientation(), s.Size())
+	eventsByLane := collectByLaneNumber(events, s.Lanes())
 	currLane := 1
 	p.SetDefaultFontFamily(consts.Courier)
 	p.RegisterHeader(func() {
@@ -45,7 +63,7 @@ func LaneSheets(p pdf.Maroto, filename string, m *hytek.Meet, events []*hytek.Ev
 				p.Text(fmt.Sprintf("Session %v", session), props.Text{Align: consts.Center, Style: consts.Bold})
 			})
 			p.Col(3, func() {
-				p.Text(m.StartDate.Format("02/01/2006"), props.Text{Align: consts.Right, Style: consts.Bold})
+				p.Text(s.SessionTime(session).Format("02/01/2006"), props.Text{Align: consts.Right, Style: consts.Bold})
 			})
 		})
 		p.Line(1.0)
@@ -85,7 +103,7 @@ func LaneSheets(p pdf.Maroto, filename string, m *hytek.Meet, events []*hytek.Ev
 		}
 		p.AddPage()
 	}
-	p.OutputFileAndClose(filename)
+	return p.Output()
 }
 
 const laneFooterHeight = 11

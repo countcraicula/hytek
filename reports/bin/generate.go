@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"hytek"
 	"hytek/csv"
+	"hytek/reports"
+	"io/ioutil"
 	"os"
 	"sort"
+	"time"
 
-	"github.com/johnfercher/maroto/pkg/consts"
-	"github.com/johnfercher/maroto/pkg/pdf"
 	"github.com/jszwec/csvutil"
 )
 
@@ -50,25 +51,37 @@ func main() {
 	for _, event := range events {
 		event.AssignHeats(*numLanes)
 	}
-	sessions := make([][]*hytek.Event, 3)
-	for _, event := range events {
-		k := eventKey{
-			stroke:   event.Stroke,
-			distance: event.Distance,
-		}
-		v := eventOrder[k]
-		if len(event.Entries) == 0 {
-			continue
-		}
-		sessions[v.session-1] = append(sessions[v.session-1], event)
+
+	var opts = []reports.SheetOption{
+		reports.SessionTimesOption([]time.Time{
+			time.Date(2021, 12, 28, 10, 30, 0, 0, time.Local),
+			time.Date(2021, 12, 30, 10, 30, 0, 0, time.Local),
+			time.Date(2022, 01, 02, 10, 30, 0, 0, time.Local),
+		}),
+		reports.BySessionOption(true),
+		reports.NumLanesOption(*numLanes),
 	}
 
-	for i, events := range sessions {
-		dateIndex = i
-		session = i + 1
-		PsychSheet(pdf.NewMaroto(consts.Portrait, consts.A4), fmt.Sprintf("psychsheet-session-%v.pdf", session), m, events)
-		HeatSheet(pdf.NewMaroto(consts.Portrait, consts.A4), fmt.Sprintf("heatsheet-session-%v.pdf", session), m, events)
-		LaneSheets(pdf.NewMaroto(consts.Portrait, consts.A4), fmt.Sprintf("lanesheet-session-%v.pdf", session), m, events)
+	psychBufs, err := reports.PsychSheet(m, events, opts...)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for session, buf := range psychBufs {
+		ioutil.WriteFile(fmt.Sprintf("psychsheet-%v.pdf", session+1), buf.Bytes(), 0755)
+	}
+	heatBufs, err := reports.HeatSheet(m, events, opts...)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for session, buf := range heatBufs {
+		ioutil.WriteFile(fmt.Sprintf("heatsheet-%v.pdf", session+1), buf.Bytes(), 0755)
+	}
+	laneBufs, err := reports.LaneSheets(m, events, opts...)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for session, buf := range laneBufs {
+		ioutil.WriteFile(fmt.Sprintf("lanesheet-%v.pdf", session+1), buf.Bytes(), 0755)
 	}
 	res := csv.MeetToResults(m)
 	out, err := os.Create("results.csv")
