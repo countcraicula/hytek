@@ -73,6 +73,28 @@ func (s *StrokeCode) UnmarshalCSV(b []byte) error {
 	return nil
 }
 
+var strokeCodeFixedWidthMapping = []string{
+	"A",
+	"B",
+	"C",
+	"D",
+	"E",
+}
+
+func (s StrokeCode) MarshalTextFixedWidth() ([]byte, error) {
+	return []byte(strokeCodeFixedWidthMapping[int(s)-1]), nil
+}
+
+func (s *StrokeCode) UnmarshalTextFixedWidth(b []byte) error {
+	str := string(b)
+	for i, stroke := range strokeCodeFixedWidthMapping {
+		if str == stroke {
+			*s = StrokeCode(i + 1)
+		}
+	}
+	return nil
+}
+
 type Entry struct {
 	Swimmer    *HY3SwimmerInfo1
 	Entry      *HY3IndividualEventEntryInfo
@@ -201,7 +223,7 @@ func (e *Event) String() string {
 	)
 }
 
-func (e *Event) MarshalText() ([]byte, error) {
+func (e *Event) MarshalTextHytek() ([]byte, error) {
 
 	return []byte(fmt.Sprintf("%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v",
 		e.Number,
@@ -225,7 +247,7 @@ func (e *Event) MarshalText() ([]byte, error) {
 	)), nil
 }
 
-func (e *Event) UnmarshalText(b []byte) error {
+func (e *Event) UnmarshalTextHytek(b []byte) error {
 	var err error
 	s := string(b)
 	ss := strings.Split(s, ";")
@@ -321,7 +343,7 @@ func (m *Meet) header() string {
 	return fmt.Sprintf("%v;%v", s, chk)
 }
 
-func (m *Meet) MarshalText() ([]byte, error) {
+func (m *Meet) MarshalTextHytek() ([]byte, error) {
 	s := fmt.Sprintf("%v;%v;%v;%v;%v;%v;%v;%v;%v;%v",
 		m.Description,
 		m.StartDate.Format(dateFormat),
@@ -337,7 +359,7 @@ func (m *Meet) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf("%v;%v", s, chk)), nil
 }
 
-func (m *Meet) UnmarshalText(b []byte) error {
+func (m *Meet) UnmarshalTextHytek(b []byte) error {
 	s := string(b)
 	ss := strings.Split(s, ";")
 	if len(ss) < 10 {
@@ -421,7 +443,7 @@ func ParseHyv(r io.Reader) (*Meet, error) {
 	if !scanner.Scan() {
 		return nil, fmt.Errorf("failed to read first line")
 	}
-	if err := m.UnmarshalText(scanner.Bytes()); err != nil {
+	if err := m.UnmarshalTextHytek(scanner.Bytes()); err != nil {
 		return nil, fmt.Errorf("failed to parse first line: %v", err)
 	}
 	line := 1
@@ -431,7 +453,7 @@ func ParseHyv(r io.Reader) (*Meet, error) {
 			continue
 		}
 		e := &Event{}
-		if err := e.UnmarshalText(b); err != nil {
+		if err := e.UnmarshalTextHytek(b); err != nil {
 			return nil, fmt.Errorf("failed to parse line %v: %v", line, err)
 		}
 		m.Events = append(m.Events, e)

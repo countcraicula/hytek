@@ -1,13 +1,13 @@
 github.com/boombuler/barcode v1.0.0 h1:s1TvRnXwL2xJRaccrdcBQMZxq6X7DvsMogtmJeHDdrc=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
+github.com/countcraicula/go-fixedwidth v0.8.0 h1:+xoblXFB5YVJNR7DhOgqYqgXSsdMQnfCSid5AeCYDwg=
+github.com/countcraicula/go-fixedwidth v0.8.0/go.mod h1:NGWsdywK/gfdU96j4IAuiwvq4+rPmrbrvHLafS1Z6NA=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gojp/goreportcard v0.0.0-20191001233754-41818f5fd295/go.mod h1:/DA2Xpp+OaR3EHafQSnT9SKOfbG2NPQR/qp6Qr8AgIw=
 github.com/google/uuid v1.1.1 h1:Gkbcsh/GbpXz7lPftLA3P6TYMwjCLYm83jiFQZF/3gY=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/ianlopshire/go-fixedwidth v0.7.0 h1:kj+Csi79dr2O0H+sAlEDSOJs8eiuKp77Pzj4eQDZRLI=
-github.com/ianlopshire/go-fixedwidth v0.7.0/go.mod h1:dQ0iYOVDduEI/xpIZ09X07sGmwTRFruVrHZcbfuNFcI=
 github.com/johnfercher/maroto v0.33.0 h1:pLnbgX/ZCEnwPNfCbQGE1igy+CJXLcsIeZt/xc0vVoM=
 github.com/johnfercher/maroto v0.33.0/go.mod h1:z/5eo/hH1g+01K4Mm0IVVbixHibtaNbZ9vHf+2H6fpM=
 github.com/jszwec/csvutil v1.6.0 h1:QORXquCT0t8nUKD7utAD4HDmQMgG0Ir9WieZXzpa7ms=

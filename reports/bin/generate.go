@@ -51,7 +51,6 @@ func main() {
 	for _, event := range events {
 		event.AssignHeats(*numLanes)
 	}
-
 	var opts = []reports.SheetOption{
 		reports.SessionTimesOption([]time.Time{
 			time.Date(2021, 12, 28, 10, 30, 0, 0, time.Local),
@@ -111,10 +110,9 @@ func mergeEvents(m *hytek.Meet) []*hytek.Event {
 		}
 		i, ok := tmp[k]
 		if !ok {
-			e := &hytek.Event{}
-			b, _ := event.MarshalText()
-			e.UnmarshalText(b)
-			ret = append(ret, e)
+			e := *event
+			e.Entries = nil
+			ret = append(ret, &e)
 			i = len(ret) - 1
 			tmp[k] = i
 		}

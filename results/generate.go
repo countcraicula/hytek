@@ -52,14 +52,14 @@ func main() {
 			return
 		}
 
-		var results = make(map[string]map[string]*result.Result)
+		var results = make(map[string]map[key]*result.Result)
 		for _, r := range res {
 			s, ok := results[r.ID]
 			if !ok {
-				s = make(map[string]*result.Result)
+				s = make(map[key]*result.Result)
 				results[r.ID] = s
 			}
-			s["FIXME"] = r
+			s[resultKey(r)] = r
 		}
 
 		file.FileDescriptor.Type = "07"
@@ -67,11 +67,13 @@ func main() {
 		for _, team := range file.Teams {
 			for _, swimmer := range team.Swimmers {
 				for _, entry := range swimmer.IndividualEntries {
-					r, ok := results[swimmer.Info1.ID][entry.EventNumber]
+					r, ok := results[swimmer.Info1.ID][entryKey(entry)]
 					if !ok {
-						fmt.Printf("Unknown entry for %v:%v\n", swimmer.Info1.SwimmerIDEvent, entry.EventNumber)
+						fmt.Printf("Unknown entry for %v,%v:%v\n", swimmer.Info1.LastName, swimmer.Info1.FirstName, entryKey(entry))
 						continue
 					}
+					entry.Unknown2 = "NN"
+					entry.Unknown3 = "N"
 					entry.Result = &hytek.HY3IndividualEventResults{
 						Type:     r.Type,
 						Time:     r.Time,
@@ -88,4 +90,23 @@ func main() {
 		return
 	}
 	hytek.GenerateHY3File(file, out)
+}
+
+type key struct {
+	stroke   hytek.StrokeCode
+	distance int
+}
+
+func resultKey(r *result.Result) key {
+	return key{
+		stroke:   r.Stroke,
+		distance: r.Distance,
+	}
+}
+
+func entryKey(e *hytek.HY3IndividualEventEntryInfo) key {
+	return key{
+		stroke:   e.Stroke,
+		distance: e.Distance,
+	}
 }

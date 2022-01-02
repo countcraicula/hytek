@@ -9,5 +9,9 @@ reports/bin/psychsheet-2.pdf
 reports/bin/psychsheet-3.pdf
 reports/bin/results.csv
 reports/bin/bin
+data
+results/results
+json/meet.json
+json/json
 
 vendor

@@ -79,9 +79,11 @@ func laneSheets(m *hytek.Meet, events []*hytek.Event, s *SheetOptions, session i
 		p.Row(10, func() {
 		})
 	})
+	o := s.EventOrder()
 	for lane, events := range eventsByLane {
 		lane++
 		currLane = lane
+		o.Sort(events)
 		for _, event := range events {
 			if len(event.Entries) == 0 {
 				continue

@@ -7,7 +7,7 @@ import (
 	"io"
 	"sort"
 
-	fixedwidth "github.com/ianlopshire/go-fixedwidth"
+	fixedwidth "github.com/countcraicula/go-fixedwidth"
 )
 
 type HY3Line string
@@ -177,7 +177,7 @@ type HY3IndividualEventEntryInfo struct {
 	Gender1             Gender         `fixed:"14,14"`
 	Gender2             Gender         `fixed:"15,15"`
 	Distance            int            `fixed:"18,21,right"`
-	Stroke              string         `fixed:"22,22"`
+	Stroke              StrokeCode     `fixed:"22,22"`
 	AgeLower            string         `fixed:"23,25,right"`
 	AgeUpper            string         `fixed:"26,28,right"`
 	Unknown1            string         `fixed:"29,32,right"`
@@ -208,11 +208,11 @@ type HY3IndividualEventResults struct {
 	PlaceInHeat   int                 `fixed:"27,29,right"`
 	PlaceOverall  int                 `fixed:"30,33,right"`
 	Unknown2      int                 `fixed:"34,36,right"`
-	Time1         HY3Time             `fixed:"37,44,right"`
-	Time2         HY3Time             `fixed:"45,52,right"`
-	Time3         HY3Time             `fixed:"53,60,right"`
-	Time4         HY3Time             `fixed:"66,73,right"`
-	Time5         HY3Time             `fixed:"75,82,right"`
+	Time1         HY3PlungerTime      `fixed:"37,44,right"`
+	Time2         HY3PlungerTime      `fixed:"45,52,right"`
+	Time3         HY3PlungerTime      `fixed:"53,60,right"`
+	Time4         HY3PlungerTime      `fixed:"66,73,right"`
+	Time5         HY3PlungerTime      `fixed:"75,82,right"`
 	ReactionTime  HY3ReactionTime     `fixed:"84,95,right"`
 	Unknown3      string              `fixed:"96,96"`
 	Unknown4      string              `fixed:"100,100"`
@@ -252,33 +252,33 @@ type HY3RelayEventEntryInfo struct {
 
 type HY3RelayEventResults struct {
 	HY3Line      `fixed:"1,2"`
-	Type         string  `fixed:"3,3"`
-	Time         string  `fixed:"4,11"`
-	LengthUnit   string  `fixed:"12,12"`
-	TimeCode     string  `fixed:"13,15"`
-	Unknown1     string  `fixed:"16,20"`
-	Heat         int     `fixed:"21,23"`
-	Lane         int     `fixed:"24,26"`
-	PlaceInHeat  int     `fixed:"27,29"`
-	PlaceOVerall int     `fixed:"30,33"`
-	Time1        HY3Time `fixed:"37,44"`
-	Time2        HY3Time `fixed:"45,52"`
-	Time3        HY3Time `fixed:"53,60"`
-	Time4        HY3Time `fixed:"66,73"`
-	Time5        HY3Time `fixed:"75,82"`
-	DayOfEvent   string  `fixed:"103,110"`
+	Type         string         `fixed:"3,3"`
+	Time         string         `fixed:"4,11"`
+	LengthUnit   string         `fixed:"12,12"`
+	TimeCode     string         `fixed:"13,15"`
+	Unknown1     string         `fixed:"16,20"`
+	Heat         int            `fixed:"21,23"`
+	Lane         int            `fixed:"24,26"`
+	PlaceInHeat  int            `fixed:"27,29"`
+	PlaceOVerall int            `fixed:"30,33"`
+	Time1        HY3PlungerTime `fixed:"37,44"`
+	Time2        HY3PlungerTime `fixed:"45,52"`
+	Time3        HY3PlungerTime `fixed:"53,60"`
+	Time4        HY3PlungerTime `fixed:"66,73"`
+	Time5        HY3PlungerTime `fixed:"75,82"`
+	DayOfEvent   string         `fixed:"103,110"`
 }
 
 type HY3DefaultTime float32
 
-func (t HY3DefaultTime) MarshalText() ([]byte, error) {
+func (t HY3DefaultTime) MarshalTextFixedWidth() ([]byte, error) {
 	if t == 0 {
 		return []byte("0"), nil
 	}
 	return []byte(fmt.Sprintf("%.02f", t)), nil
 }
 
-func (t *HY3DefaultTime) UnmarshalText(b []byte) error {
+func (t *HY3DefaultTime) UnmarshalTextFixedWidth(b []byte) error {
 	if len(b) == 0 {
 		*t = 0
 		return nil
@@ -289,20 +289,37 @@ func (t *HY3DefaultTime) UnmarshalText(b []byte) error {
 
 type HY3Time float32
 
-func (t HY3Time) MarshalText() ([]byte, error) {
-	if t == 0 {
-		return nil, nil
-	}
+func (t HY3Time) MarshalTextFixedWidth() ([]byte, error) {
 	return []byte(fmt.Sprintf("%.02f", t)), nil
 }
 
-func (t *HY3Time) UnmarshalText(b []byte) error {
+func (t *HY3Time) UnmarshalTextFixedWidth(b []byte) error {
 	if len(b) == 0 {
 		*t = 0
 		return nil
 	}
 	_, err := fmt.Sscan(string(b), t)
 	return err
+}
+
+func (t HY3Time) MarshalCSV() ([]byte, error) {
+	return []byte(fmt.Sprintf("%v:%v.%v", int(t)/60, int(t)%60, t-HY3Time(int(t)))), nil
+}
+
+func (t *HY3Time) UnmarshalCSV(b []byte) error {
+	if string(b) == "" {
+		return nil
+	}
+	var minutes, seconds, hundreths int
+	n, err := fmt.Sscanf(string(b), "%d:%d.%d", &minutes, &seconds, &hundreths)
+	if err != nil {
+		return fmt.Errorf("failed to parse string (%v); %v", string(b), err)
+	}
+	if n < 3 {
+		return fmt.Errorf("wrong number of numbers parsed (%v): want(3), got(%v)", string(b), n)
+	}
+	*t = HY3Time(minutes*60+seconds) + HY3Time(hundreths)/100
+	return nil
 }
 
 func (h HY3Time) String() string {
@@ -315,9 +332,20 @@ func (h HY3Time) String() string {
 	return fmt.Sprintf("%04.2f", h)
 }
 
+type HY3PlungerTime struct {
+	HY3Time
+}
+
+func (t HY3PlungerTime) MarshalTextFixedWidth() ([]byte, error) {
+	if t.HY3Time == 0 {
+		return nil, nil
+	}
+	return []byte(fmt.Sprintf("%.02f", t.HY3Time)), nil
+}
+
 type HY3ReactionTime float64
 
-func (t HY3ReactionTime) MarshalText() ([]byte, error) {
+func (t HY3ReactionTime) MarshalTextFixedWidth() ([]byte, error) {
 	if t == 0 {
 		return nil, nil
 	}
@@ -327,7 +355,7 @@ func (t HY3ReactionTime) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf("%.010f", t)), nil
 }
 
-func (t *HY3ReactionTime) UnmarshalText(b []byte) error {
+func (t *HY3ReactionTime) UnmarshalTextFixedWidth(b []byte) error {
 	if len(b) == 0 {
 		*t = 0
 		return nil
@@ -367,7 +395,7 @@ type HY3Splits struct {
 
 type HY3SplitTimes []*HY3SplitTime
 
-func (h HY3SplitTimes) MarshalText() ([]byte, error) {
+func (h HY3SplitTimes) MarshalTextFixedWidth() ([]byte, error) {
 	var buf bytes.Buffer
 	enc := fixedwidth.NewEncoder(&buf)
 	enc.SetLineTerminator([]byte{})
@@ -379,7 +407,7 @@ func (h HY3SplitTimes) MarshalText() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *HY3SplitTimes) UnmarshalText(b []byte) error {
+func (h *HY3SplitTimes) UnmarshalTextFixedWidth(b []byte) error {
 	for i := 0; i < len(b); i += 11 {
 		split := &HY3SplitTime{}
 		if err := fixedwidth.Unmarshal(b[i:i+11], split); err != nil {

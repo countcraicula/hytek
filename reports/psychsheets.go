@@ -34,6 +34,8 @@ func psychSheet(m *hytek.Meet, events []*hytek.Event, s *SheetOptions, session i
 	p.SetDefaultFontFamily(consts.Courier)
 	p.RegisterHeader(psychHeader(p, m, s, session))
 	p.RegisterFooter(psychFooter(p))
+	o := s.EventOrder()
+	o.Sort(events)
 	for _, event := range events {
 		if len(event.Entries) == 0 {
 			continue

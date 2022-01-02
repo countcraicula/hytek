@@ -3,7 +3,7 @@ module github.com/countcraicula/hytek
 go 1.17
 
 require (
-	github.com/ianlopshire/go-fixedwidth v0.7.0
+	github.com/countcraicula/go-fixedwidth v0.8.0
 	github.com/johnfercher/maroto v0.33.0
 	github.com/jszwec/csvutil v1.6.0
 )
