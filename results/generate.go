@@ -75,10 +75,11 @@ func main() {
 					entry.Unknown2 = "NN"
 					entry.Unknown3 = "N"
 					entry.Result = &hytek.HY3IndividualEventResults{
-						Type:     r.Type,
-						Time:     r.Time,
-						TimeCode: "S", //No finals
-						Splits:   r.Splits(),
+						Type:       r.Type,
+						Time:       r.Time,
+						TimeCode:   "S", //No finals
+						LengthUnit: string(file.MeetAddress.Course),
+						Splits:     r.Splits(),
 					}
 				}
 			}
