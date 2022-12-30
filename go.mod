@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/countcraicula/go-fixedwidth v0.8.0
+	github.com/golang/glog v1.0.0
 	github.com/johnfercher/maroto v0.33.0
 	github.com/jszwec/csvutil v1.6.0
 )

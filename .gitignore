@@ -15,3 +15,8 @@ json/meet.json
 json/json
 
 vendor
+entries/christmas_time_trial.hyv
+*.hy3
+*.hyv
+*.csv
+*.pdf

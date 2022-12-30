@@ -20,14 +20,16 @@ var dateList = []time.Time{
 
 func eventToHeatDuration(e *hytek.Event) time.Duration {
 	switch e.Distance {
+	case 25:
+		return 60 * time.Second
 	case 50:
 		return 90 * time.Second
 	case 100:
-		return 150 * time.Second
+		return 120 * time.Second
 	case 200:
-		return 5 * time.Minute
+		return 240 * time.Second
 	case 400:
-		return 8 * time.Minute
+		return 480 * time.Second
 	}
 	return 10 * time.Minute
 }

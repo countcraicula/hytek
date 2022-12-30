@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	o1, err := os.Open("../data/meet.hyv")
+	o1, err := os.Open("../data/test.hyv")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -22,7 +22,7 @@ func main() {
 		return
 	}
 
-	o2, err := os.Open("../data/ADSC-Entries-Christmas Time Trial-28Dec2021-001.HY3")
+	o2, err := os.Open("../data/ADSC-Entries-Christmas Time Trial-29Dec2022-001.HY3")
 	if err != nil {
 		fmt.Println(err)
 		return

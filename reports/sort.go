@@ -9,6 +9,7 @@ import (
 type eventKey struct {
 	stroke   hytek.StrokeCode
 	distance int
+	relay    bool
 }
 type eventValue struct {
 	order      int
@@ -16,30 +17,48 @@ type eventValue struct {
 	session    int
 }
 
+// Day 1
+// 200 free
+// 25 free
+// 50 free
+// 100 back
+// 50 breast
+// 100 fly
+// 200 breast
+// 200 IM
+// 4x25 free relay
+// Day 2
+// 200 back
+// 100 breast
+// 25 back
+// 50 back
+// 100 free
+// 50 fly
+// 100 IM
+// 400 free
+// 4x25 medley relay
 var DefaultEventOrder = []OrderFunc{
-	MixedGenderStrokeDistanceOrder(hytek.Freestyle, 100),
-	MixedGenderStrokeDistanceOrder(hytek.Breaststroke, 50),
-	BreakOrder(),
-	MixedGenderStrokeDistanceOrder(hytek.Backstroke, 50),
-	MixedGenderStrokeDistanceOrder(hytek.Butterfly, 100),
-	BreakOrder(),
-	MixedGenderStrokeDistanceOrder(hytek.Freestyle, 400),
-	NewSessionOrder(),
-	MixedGenderStrokeDistanceOrder(hytek.Breaststroke, 100),
+	MixedGenderStrokeDistanceOrder(hytek.Freestyle, 200),
+	MixedGenderStrokeDistanceOrder(hytek.Freestyle, 25),
 	MixedGenderStrokeDistanceOrder(hytek.Freestyle, 50),
-	BreakOrder(),
-	MixedGenderStrokeDistanceOrder(hytek.Butterfly, 50),
-	MixedGenderStrokeDistanceOrder(hytek.Breaststroke, 200),
 	MixedGenderStrokeDistanceOrder(hytek.Backstroke, 100),
-	BreakOrder(),
-	MixedGenderStrokeDistanceOrder(hytek.Medley, 100),
+	MixedGenderStrokeDistanceOrder(hytek.Breaststroke, 25),
+	MixedGenderStrokeDistanceOrder(hytek.Breaststroke, 50),
+	MixedGenderStrokeDistanceOrder(hytek.Butterfly, 100),
+	MixedGenderStrokeDistanceOrder(hytek.Breaststroke, 200),
 	MixedGenderStrokeDistanceOrder(hytek.Medley, 200),
+	MixedGenderStrokeDistanceRelayOrder(hytek.Freestyle, 25),
 	NewSessionOrder(),
 	MixedGenderStrokeDistanceOrder(hytek.Backstroke, 200),
-	BreakOrder(),
-	MixedGenderStrokeDistanceOrder(hytek.Freestyle, 200),
-	BreakOrder(),
-	MixedGenderStrokeDistanceOrder(hytek.Medley, 400),
+	MixedGenderStrokeDistanceOrder(hytek.Breaststroke, 100),
+	MixedGenderStrokeDistanceOrder(hytek.Backstroke, 25),
+	MixedGenderStrokeDistanceOrder(hytek.Backstroke, 50),
+	MixedGenderStrokeDistanceOrder(hytek.Freestyle, 100),
+	MixedGenderStrokeDistanceOrder(hytek.Butterfly, 50),
+	MixedGenderStrokeDistanceOrder(hytek.Medley, 100),
+	MixedGenderStrokeDistanceOrder(hytek.Freestyle, 400),
+	MixedGenderStrokeDistanceRelayOrder(hytek.Medley, 25),
+	MixedGenderStrokeDistanceOrder(hytek.Butterfly, 200),
 }
 
 type sortEventsByStrokeAndDistance struct {
@@ -55,10 +74,12 @@ func (a *sortEventsByStrokeAndDistance) Less(i, j int) bool {
 	iKey := eventKey{
 		stroke:   a.events[i].Stroke,
 		distance: a.events[i].Distance,
+		relay:    a.events[i].Type == hytek.Relay,
 	}
 	jKey := eventKey{
 		stroke:   a.events[j].Stroke,
 		distance: a.events[j].Distance,
+		relay:    a.events[j].Type == hytek.Relay,
 	}
 	return a.order[iKey].order < a.order[jKey].order
 }
@@ -98,6 +119,7 @@ func (o *Order) BreakAfter(e *hytek.Event) bool {
 	key := eventKey{
 		stroke:   e.Stroke,
 		distance: e.Distance,
+		relay:    false,
 	}
 	v, ok := o.data[key]
 	if !ok {
@@ -112,6 +134,7 @@ func (o *Order) SplitBySession(events []*hytek.Event) [][]*hytek.Event {
 		k := eventKey{
 			stroke:   event.Stroke,
 			distance: event.Distance,
+			relay:    false,
 		}
 		v := o.data[k]
 		if len(event.Entries) == 0 {
@@ -142,6 +165,18 @@ func MixedGenderStrokeDistanceOrder(stroke hytek.StrokeCode, distance int) Order
 		key := eventKey{
 			stroke:   stroke,
 			distance: distance,
+			relay:    false,
+		}
+		o.setEvent(key, &eventValue{order: o.event, session: o.session})
+		return true
+	})
+}
+func MixedGenderStrokeDistanceRelayOrder(stroke hytek.StrokeCode, distance int) OrderFunc {
+	return OrderFunc(func(o *Order) bool {
+		key := eventKey{
+			stroke:   stroke,
+			distance: distance,
+			relay:    true,
 		}
 		o.setEvent(key, &eventValue{order: o.event, session: o.session})
 		return true

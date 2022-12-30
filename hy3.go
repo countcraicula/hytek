@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	fixedwidth "github.com/countcraicula/go-fixedwidth"
 )
@@ -34,9 +35,9 @@ func PopulateMeetEntries(m *Meet, h *HY3) error {
 	for _, team := range h.Teams {
 		for _, swimmer := range team.Swimmers {
 			for _, entry := range swimmer.IndividualEntries {
-				e, ok := events[entry.EventNumber]
+				e, ok := events[strings.Trim(entry.EventNumber, " ")]
 				if !ok {
-					return fmt.Errorf("unknown event number %v", entry.EventNumber)
+					return fmt.Errorf("unknown event number %q", entry.EventNumber)
 				}
 				e.Entries = append(e.Entries, &Entry{Swimmer: swimmer.Info1, Entry: entry})
 			}
@@ -311,12 +312,15 @@ func (t *HY3Time) UnmarshalCSV(b []byte) error {
 		return nil
 	}
 	var minutes, seconds, hundreths int
-	n, err := fmt.Sscanf(string(b), "%d:%d.%d", &minutes, &seconds, &hundreths)
-	if err != nil {
-		return fmt.Errorf("failed to parse string (%v); %v", string(b), err)
-	}
-	if n < 3 {
-		return fmt.Errorf("wrong number of numbers parsed (%v): want(3), got(%v)", string(b), n)
+	if n, err := fmt.Sscanf(string(b), "%d:%d.%d", &minutes, &seconds, &hundreths); err != nil || n != 3 {
+		minutes, seconds, hundreths = 0, 0, 0
+		if n, err = fmt.Sscanf(string(b), "%d.%d", &seconds, &hundreths); err != nil || n != 2 {
+			minutes, seconds, hundreths = 0, 0, 0
+			if n, err := fmt.Sscanf(string(b), "%d", &seconds); err != nil || n != 1 {
+				minutes, seconds, hundreths = 0, 0, 0
+				return fmt.Errorf("failed to parse string (%v); %v", string(b), err)
+			}
+		}
 	}
 	*t = HY3Time(minutes*60+seconds) + HY3Time(hundreths)/100
 	return nil
